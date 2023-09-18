@@ -4,7 +4,7 @@ import { createReadStream, unlink } from "fs";
 
 import { env } from "./env";
 
-const uploadToS3 = async ({ name, path }: {name: string, path: string}) => {
+const uploadToS3 = async ({ name, prefix, path }: { name: string, prefix: string, path: string }) => {
   console.log("Uploading backup to S3...");
 
   const bucket = env.AWS_S3_BUCKET;
@@ -23,7 +23,7 @@ const uploadToS3 = async ({ name, path }: {name: string, path: string}) => {
   await client.send(
     new PutObjectCommand({
       Bucket: bucket,
-      Key: name,
+      Key: `${prefix}/${name}`,
       Body: createReadStream(path),
     })
   )
@@ -31,12 +31,12 @@ const uploadToS3 = async ({ name, path }: {name: string, path: string}) => {
   console.log("Backup uploaded to S3...");
 }
 
-const dumpToFile = async (path: string) => {
+const dumpToFile = async (path: string, url: string) => {
   console.log("Dumping DB to file...");
 
   await new Promise((resolve, reject) => {
     exec(
-      `pg_dump ${env.BACKUP_DATABASE_URL} -F t | gzip > ${path}`,
+      `pg_dump ${url} -F t | gzip > ${path}`,
       (error, stdout, stderr) => {
         if (error) {
           reject({ error: JSON.stringify(error), stderr });
@@ -65,14 +65,23 @@ const deleteFile = async (path: string) => {
 export const backup = async () => {
   console.log("Initiating DB backup...")
 
-  let date = new Date().toISOString()
-  const timestamp = date.replace(/[:.]+/g, '-')
-  const filename = `backup-${timestamp}.tar.gz`
-  const filepath = `/tmp/${filename}`
+  await Promise.all(
+    env.BACKUP_DATABASE_URLS_CONFIG.map(async database => {
+      const { url, name: label } = database;
+      console.log(`Backing up ${label}...`)
 
-  await dumpToFile(filepath)
-  await uploadToS3({name: filename, path: filepath})
-  await deleteFile(filepath)
+      let date = new Date().toISOString()
+      const timestamp = date.replace(/[:.]+/g, '-')
+      const filename = `backup-${timestamp}.tar.gz`
+      const filepath = `/tmp/${label}/${filename}`
+
+      await dumpToFile(filepath, url)
+      await uploadToS3({ name: filename, prefix: label, path: filepath })
+      await deleteFile(filepath)
+
+      console.log(`Backup of ${database.name} complete...`)
+    })
+  );
 
   console.log("DB backup complete...")
 }
