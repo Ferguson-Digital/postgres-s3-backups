@@ -1,6 +1,7 @@
 import { exec } from "child_process";
 import { PutObjectCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { createReadStream, unlink } from "fs";
+import { stat, mkdir } from 'fs/promises'
 
 import { env } from "./env";
 
@@ -33,6 +34,15 @@ const uploadToS3 = async ({ name, prefix, path }: { name: string, prefix: string
 
 const dumpToFile = async (path: string, url: string) => {
   console.log("Dumping DB to file...");
+
+  // check if directory exists
+  const dir = path.split('/').slice(0, -1).join('/');
+  const dirExists = await stat(dir).then(() => true).catch(() => false);
+
+  if (!dirExists) {
+    console.log(`Creating directory ${dir}...`)
+    await mkdir(dir, { recursive: true });
+  }
 
   await new Promise((resolve, reject) => {
     exec(
