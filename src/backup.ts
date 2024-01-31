@@ -95,7 +95,7 @@ const deleteFile = async (path: string) => {
 export const backup = async () => {
   console.log("Initiating DB backup...");
 
-  await Promise.allSettled(
+  await Promise.all(
     env.BACKUP_DATABASE_URLS_CONFIG.map(async database => {
       const { url, name: label } = database;
       console.log(`Backing up ${label}...`)
@@ -115,16 +115,7 @@ export const backup = async () => {
         label
       }
     })
-  ).then((results) => {
-    for (const result of results) {
-      if (result.status == "rejected") {
-        console.error("Backup failed...");
-        console.error(result.reason);
-      } else {
-        console.log(`Backup for ${result.value.label} complete...`);
-      }
-    }
-  });
+  )
 
   console.log("DB backup complete...");
 }

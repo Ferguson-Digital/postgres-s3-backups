@@ -26,6 +26,5 @@ ARG PG_VERSION='16'
 RUN apk add --update --no-cache postgresql${PG_VERSION}-client --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main && \
     apk add --update --no-cache nodejs npm
 
-CMD pg_isready --dbname=$BACKUP_DATABASE_URL && \
-    pg_dump --version && \
+CMD pg_dump --version && \
     node dist/index.js
