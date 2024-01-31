@@ -48,7 +48,7 @@ const dumpToFile = async (filePath: string, url: string) => {
   }
 
   await new Promise((resolve, reject) => {
-    exec(`pg_dump ${url} --format=tar | gzip > ${filePath}`, (error, stdout, stderr) => {
+    exec(`pg_dump --dbname=${url} --format=tar | gzip > ${filePath}`, (error, stdout, stderr) => {
       if (error) {
         reject({ error: error, stderr: stderr.trimEnd() });
         return;
