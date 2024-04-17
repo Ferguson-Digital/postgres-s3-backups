@@ -26,7 +26,7 @@ A simple NodeJS application to backup your PostgreSQL database to S3 via a cron.
         ```
 5. Run the restore command (connection details are in railway)
   ```bash
-    PGPASSWORD=<password> pg_restore -U <username> -h <host> -p <port> -W -F t -d <db_name> <dump_file_name>
+    pg_restore --clean --if-exists --format=tar --dbname="<DATABASE_URL>" <backup_file_path.tar>
   ```
   If you are using Prisma ORM, your command might finish with a warning. Don't fret, your data would import as normal.
 
