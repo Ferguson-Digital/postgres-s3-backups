@@ -14,7 +14,7 @@ RUN npm install && \
     npm run build && \
     npm prune --production
 
-FROM alpine:3.18
+FROM alpine:3.19
 
 WORKDIR /root
 
